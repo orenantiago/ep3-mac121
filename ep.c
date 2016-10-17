@@ -35,7 +35,15 @@ int busca(int v[],int i, int n, int x)
         if(v[j] == x) return j; 
 }
 
-int * trocaVetor(int v[], int n) 
+/*A função recebe um vetor e o transforma em um vetor pulando os índices
+dois a dois, também no vetor índices, os indices onde cada valor associado
+ocupava originalmente. Exemplo:
+v = [1, 2, 3, 4]
+Após a função:
+    v = [1, 3, 2, 4]
+    i = [0, 2, 1, 3]
+*/
+void transformaVetor(int v[], int n, int indices[]) 
 {
     int aux, *w, cont, i, nmaiores;
     w = malloc(n * sizeof(int));
@@ -44,17 +52,14 @@ int * trocaVetor(int v[], int n)
     
     while(cont < n) {
         w[cont] = v[aux];
-        cont++;
+        indices[cont++] = aux;
         aux = (aux + 2) % n;
     }
-    cont = 0;
-    aux = 0;
     
-    /*for(i = 0; i < n; i++)
-        printf("%d ", w[i]);
-    printf("\n");*/
+    for(i = 0; i < n; i++)
+        v[i] = w[i];
 
-    return(w);
+    free(w);
 }
 
 void imprimeVetor(int v[], int n) 
@@ -72,55 +77,58 @@ void troca (int v[], int i, int j)
     v[j] = aux;
 }
 
-void sort(int v[], int n) 
+void ordenacao(int v[], int n) 
 {
-    int i, j, trocou, ok, * coordenadas, trocas = 0, * aux, * ordenado, * aux2;
-    ok = 1;
+    int i, j, trocou = 1, ok = 1, * indices, trocas = 0, * ordenado;
     
     if (n % 2) {
-        coordenadas = malloc(n * n * sizeof(int));
         ordenado = malloc(n * sizeof(int));
-        aux = malloc(n * sizeof(int));
-        aux2 = malloc(n * sizeof(int));
-        for (i = 0; i < n; i++)
-            aux2[i] = v[i];
-        quickSort(aux2, 0, n - 1);
-        ordenado = trocaVetor(aux2, n);
-        aux = trocaVetor(v, n);
+        indices = malloc(n * sizeof(int));
 
-        for (i = 0; i < n; i++) {
-            if(v[i] != ordenado[i]) {
-                j = busca(v, i + 1, n, ordenado[i]);
-                while(j != i + 1) {
-                    troca(v, j, j - 1);
-                    coordenadas[trocas++] = ((j - 1)* 2) % n;
-                    j--;
+        for(i = 0; i < n; i++)
+            ordenado[i] = v[i];
+        quickSort(ordenado, 0, n - 1);
+        
+        transformaVetor(ordenado, n, indices);
+        transformaVetor(v, n, indices);
+        while(trocou) {
+            for (i = 0; i < n; i++) {
+                trocou = 0;
+                if(v[i] != ordenado[i]) {
+                    j = busca(v, i + 1, n, ordenado[i]);
+                    while(j > i) {
+                        troca(v, j, j - 1);
+                        printf("%d\n", indices[--j]);
+                    }
+                    trocou = 1;
                 }
             }
         }
-        for (i = 0; i < trocas; i++) {
-            printf("%d\n", coordenadas[i]);
-        }
+        free(ordenado);
     }
-    else{
-        /*utilizo um bubble sort para ordenar o vetor com os numeros nos indices pares 
-        e o vetor com os numeros nos indices impares*/
-        coordenadas = malloc((n * n / 2) * sizeof(int));
-        trocou = 1;
+    else {
+        /*utilizo o bubble sort para ordenar o vetor com os numeros nos 
+        indices pares e o vetor com os numeros nos indices impares, depois
+        verifico se o vetor está ordenado*/
+        indices = malloc((n * n / 2) * sizeof(int));
         
         while (trocou) {
             trocou = 0;
             for(j = 0; j < n - 2; j += 2) {
                 if (v[j + 2] < v[j]) {
                     troca(v, j + 2, j);
-                    coordenadas[trocas++] = j;
+                    indices[trocas++] = j;
                     trocou = 1;
                 }
             }
+        }
+        trocou = 1;
+        while(trocou) {
+            trocou = 0;
             for(j = 1; j < n - 2; j += 2) {
                 if (v[j + 2] < v[j]) {
                     troca(v, j + 2, j);
-                    coordenadas[trocas++] = j;
+                    indices[trocas++] = j;
                     trocou = 1;
                 }
             }
@@ -130,21 +138,16 @@ void sort(int v[], int n)
                 ok = 0;
 
         if (ok) {
-            imprimeVetor(coordenadas, trocas);
-            printf("vetor ordenado\n");
-            imprimeVetor(v, n);
-
+            for (i = 0; i < trocas; i++) printf("%d\n", indices[i]);
+            printf("\n");
         }
         else {
-            printf("impossivel\n");
+            printf("Impossivel\n");
         }
-
-
     }
-    free(coordenadas);
+    free(indices);
 }
 
-/*por enquanto só funciona com vetor de tamanho par*/
 int main(int argc, char const *argv[])
 {
     int * v, n, i;
@@ -156,6 +159,6 @@ int main(int argc, char const *argv[])
     for (i = 0; i < n; i++)
         scanf("%d", &v[i]);
 
-    sort(v, n);
+    ordenacao(v, n);
     return 0;
 }
